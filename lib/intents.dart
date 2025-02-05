@@ -1,7 +1,6 @@
 // Custom intents for actions
 import 'package:flutter/material.dart';
 
-
 class ListNavigationIntent extends Intent {
   const ListNavigationIntent();
 }
@@ -50,3 +49,9 @@ class CharacterKeyIntent extends ListNavigationIntent {
   final String character;
   const CharacterKeyIntent(this.character);
 }
+
+class SelectNoIntent extends Intent {}
+
+class SelectYesIntent extends Intent {}
+
+class ConfirmIntent extends Intent {}

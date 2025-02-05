@@ -24,7 +24,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     required this.itemCount,
     required this.itemBuilder,
     required this.onItemTap,
-    this.onDelete,  
+    this.onDelete,
     this.onEdit,
     this.onCopy,
     this.scrollController,
@@ -176,7 +176,6 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
     }
   }
 
-
   Map<ShortcutActivator, Intent> get _shortcuts {
     final Map<ShortcutActivator, Intent> baseShortcuts = {
       const SingleActivator(LogicalKeyboardKey.arrowUp): const MoveUpIntent(),
@@ -237,7 +236,6 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
         EnterIntent: CallbackAction<EnterIntent>(
           onInvoke: (intent) => _handleEnter(),
         ),
-  
         EditIntent: CallbackAction<EditIntent>(
           onInvoke: (intent) => _handleEdit(),
         ),
@@ -246,6 +244,9 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
         ),
         CharacterKeyIntent: CallbackAction<CharacterKeyIntent>(
           onInvoke: (intent) => _handleCharacterKey(intent.character),
+        ),
+        DeleteIntent: CallbackAction<DeleteIntent>(
+          onInvoke: (intent) => _handleDelete(),
         ),
       };
 
@@ -299,6 +300,78 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
           ),
         ),
       ),
+    );
+  }
+
+  void _handleDelete() {
+    if (widget.onDelete == null || _focusedIndex == -1) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        int selectedOption = 0; // 0 for No, 1 for Yes
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Shortcuts(
+              shortcuts: {
+                LogicalKeySet(LogicalKeyboardKey.arrowLeft): SelectNoIntent(),
+                LogicalKeySet(LogicalKeyboardKey.arrowRight): SelectYesIntent(),
+                LogicalKeySet(LogicalKeyboardKey.enter): ConfirmIntent(),
+              },
+              child: Actions(
+                actions: {
+                  SelectNoIntent: CallbackAction<SelectNoIntent>(
+                    onInvoke: (intent) => setState(() => selectedOption = 0),
+                  ),
+                  SelectYesIntent: CallbackAction<SelectYesIntent>(
+                    onInvoke: (intent) => setState(() => selectedOption = 1),
+                  ),
+                  ConfirmIntent: CallbackAction<ConfirmIntent>(
+                    onInvoke: (intent) {
+                      if (selectedOption == 1) {
+                        widget.onDelete!(_focusedIndex);
+                      }
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                },
+                child: AlertDialog(
+                  title: const Text("Confirm Deletion"),
+                  content:
+                      const Text("Are you sure you want to delete this item?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        "No",
+                        style: TextStyle(
+                          color:
+                              selectedOption == 0 ? Colors.blue : Colors.black,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        widget.onDelete!(_focusedIndex);
+                        Navigator.of(context).pop();
+                      },
+                      child: Text(
+                        "Yes",
+                        style: TextStyle(
+                          color:
+                              selectedOption == 1 ? Colors.blue : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
