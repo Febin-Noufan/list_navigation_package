@@ -19,6 +19,12 @@ class KeyboardNavigableList<T> extends StatefulWidget {
   final bool isLoading;
   final String Function(int index) getItemString;
 
+  /// Optional separator builder.  If null, no separator is displayed.
+  final IndexedWidgetBuilder? separatorBuilder;
+
+  /// Optional padding for the inner ListView.
+  final EdgeInsets? padding;
+
   const KeyboardNavigableList({
     super.key,
     required this.itemCount,
@@ -34,6 +40,8 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     this.loadingWidget,
     this.isLoading = false,
     required this.getItemString, // Add this new property
+    this.separatorBuilder,
+    this.padding,
   });
 
   @override
@@ -159,11 +167,6 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
     );
   }
 
-  // void _handleDelete() {
-  //   if (widget.onDelete == null || _focusedIndex == -1) return;
-  //   _showDeleteConfirmation(_focusedIndex);
-  // }
-
   void _handleEdit() {
     if (widget.onEdit != null && _focusedIndex != -1) {
       widget.onEdit!(_focusedIndex);
@@ -279,10 +282,10 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
         child: Focus(
           focusNode: _focusNode,
           autofocus: true,
-          child: ListView.builder(
+          child: ListView.separated(
             controller: _scrollController,
+            padding: widget.padding, // Apply padding
             itemCount: widget.itemCount,
-            itemExtent: widget.itemExtent,
             itemBuilder: (context, index) {
               final isSelected = index == _focusedIndex;
 
@@ -297,6 +300,9 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
                     widget.itemBuilder(context, index, isSelected, isSelected),
               );
             },
+            separatorBuilder: widget.separatorBuilder ??
+                (context, index) => const SizedBox
+                    .shrink(), // Use provided separator or no separator.
           ),
         ),
       ),
