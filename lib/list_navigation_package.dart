@@ -18,6 +18,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
   final Widget? loadingWidget;
   final bool isLoading;
   final String Function(int index) getItemString;
+  final VoidCallback? onEscapeDoubleTap;
 
   /// Optional separator builder.  If null, no separator is displayed.
   final IndexedWidgetBuilder? separatorBuilder;
@@ -42,6 +43,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     required this.getItemString, // Add this new property
     this.separatorBuilder,
     this.padding,
+    this.onEscapeDoubleTap,
   });
 
   @override
@@ -55,8 +57,10 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   late FocusNode _focusNode;
   String _quickTypeBuffer = '';
   Timer? _quickTypeTimer;
+  Timer? _escapeTimer;
 
   static const _quickTypeDuration = Duration(milliseconds: 500);
+  static const _escapeDoubleTapThreshold = Duration(milliseconds: 300);
 
   @override
   void initState() {
@@ -120,6 +124,22 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
           return;
         }
       }
+    }
+  }
+
+  // Double tap escape functionality
+  void _handleEscape() {
+    if (widget.onEscapeDoubleTap == null) return;
+
+    if (_escapeTimer?.isActive ?? false) {
+      // Double tap detected within the time window
+      _escapeTimer?.cancel();
+      widget.onEscapeDoubleTap!();
+    } else {
+      // First tap, start the timer
+      _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
+        // Timer expired, single tap only, do nothing
+      });
     }
   }
 
@@ -191,8 +211,9 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
           const PageDownIntent(),
       const SingleActivator(LogicalKeyboardKey.enter): const EnterIntent(),
       if (widget.onDelete != null)
-        const SingleActivator(LogicalKeyboardKey.keyD, alt: true):
-            const DeleteIntent(),
+        const SingleActivator(LogicalKeyboardKey.escape): const EscapeIntent(),
+      const SingleActivator(LogicalKeyboardKey.keyD, alt: true):
+          const DeleteIntent(),
       if (widget.onEdit != null)
         const SingleActivator(LogicalKeyboardKey.keyE, alt: true):
             const EditIntent(),
@@ -241,6 +262,10 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
         ),
         EditIntent: CallbackAction<EditIntent>(
           onInvoke: (intent) => _handleEdit(),
+        ),
+        EscapeIntent: CallbackAction<EscapeIntent>(
+          //Esc button functionalities
+          onInvoke: (intent) => _handleEscape(),
         ),
         CopyIntent: CallbackAction<CopyIntent>(
           onInvoke: (intent) => _handleCopy(),
@@ -384,6 +409,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   @override
   void dispose() {
     _quickTypeTimer?.cancel();
+     _escapeTimer?.cancel();
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }

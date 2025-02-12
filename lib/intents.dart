@@ -55,3 +55,7 @@ class SelectNoIntent extends Intent {}
 class SelectYesIntent extends Intent {}
 
 class ConfirmIntent extends Intent {}
+
+class EscapeIntent extends Intent{ //Esc botton 
+  const EscapeIntent();
+}
