@@ -19,6 +19,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
   final bool isLoading;
   final String Function(int index) getItemString;
   final VoidCallback? onEscapeDoubleTap;
+   final VoidCallback? onEscapeSingleTap;
 
   /// Optional separator builder.  If null, no separator is displayed.
   final IndexedWidgetBuilder? separatorBuilder;
@@ -44,6 +45,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     this.separatorBuilder,
     this.padding,
     this.onEscapeDoubleTap,
+    this.onEscapeSingleTap,
   });
 
   @override
@@ -67,6 +69,13 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
     _focusNode = FocusNode();
+      if (widget.itemCount > 0) {
+      _focusedIndex = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onSelectedIndexChange?.call(_focusedIndex);
+        _scrollToIndex(_focusedIndex);
+      });
+    }
   }
 
   void _handleCharacterKey(String character) {
@@ -128,17 +137,18 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   }
 
   // Double tap escape functionality
-  void _handleEscape() {
-    if (widget.onEscapeDoubleTap == null) return;
+ void _handleEscape() {
+    if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null) return;
 
     if (_escapeTimer?.isActive ?? false) {
       // Double tap detected within the time window
       _escapeTimer?.cancel();
-      widget.onEscapeDoubleTap!();
+      widget.onEscapeDoubleTap?.call(); // Only call if it's not null
     } else {
       // First tap, start the timer
       _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
-        // Timer expired, single tap only, do nothing
+        // Timer expired, single tap only, call single tap action
+        widget.onEscapeSingleTap?.call(); // Only call if not null
       });
     }
   }
@@ -341,7 +351,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        int selectedOption = 0; // 0 for No, 1 for Yes
+        int selectedOption = 0; 
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -417,3 +427,6 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
     super.dispose();
   }
 }
+
+
+
