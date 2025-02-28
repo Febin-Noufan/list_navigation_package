@@ -150,19 +150,25 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   }
 
   // Double tap escape functionality
-  void _handleEscape() {
-    if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null)
-      return;
-
-    if (_escapeTimer?.isActive ?? false) {
-      _escapeTimer?.cancel();
-      widget.onEscapeDoubleTap?.call();
-    } else {
-      _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
-        widget.onEscapeSingleTap?.call();
-      });
-    }
+void _handleEscape() {
+  print("Escape pressed");
+  if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null) {
+    print("No escape handlers defined");
+    return;
   }
+
+  if (_escapeTimer?.isActive ?? false) {
+    print("Double tap detected");
+    _escapeTimer?.cancel();
+    widget.onEscapeDoubleTap?.call();
+  } else {
+    print("First tap, waiting for second");
+    _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
+      print("Single tap timeout");
+      widget.onEscapeSingleTap?.call();
+    });
+  }
+}
 
   void _moveSelection(int delta) {
     if (widget.itemCount == 0) return;
@@ -231,8 +237,8 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
       const SingleActivator(LogicalKeyboardKey.pageDown):
           const PageDownIntent(),
       const SingleActivator(LogicalKeyboardKey.enter): const EnterIntent(),
-      if (widget.onDelete != null)
-        const SingleActivator(LogicalKeyboardKey.escape): const EscapeIntent(),
+      // Always include Escape regardless of onDelete
+      const SingleActivator(LogicalKeyboardKey.escape): const EscapeIntent(),
       const SingleActivator(LogicalKeyboardKey.keyD, alt: true):
           const DeleteIntent(),
       if (widget.onEdit != null)
@@ -285,8 +291,10 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
           onInvoke: (intent) => _handleEdit(),
         ),
         EscapeIntent: CallbackAction<EscapeIntent>(
-          //Esc button functionalities
-          onInvoke: (intent) => _handleEscape(),
+          onInvoke: (intent) {
+            _handleEscape();
+            return null; // Return value needed for Action
+          },
         ),
         CopyIntent: CallbackAction<CopyIntent>(
           onInvoke: (intent) => _handleCopy(),
