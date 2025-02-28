@@ -19,13 +19,16 @@ class KeyboardNavigableList<T> extends StatefulWidget {
   final bool isLoading;
   final String Function(int index) getItemString;
   final VoidCallback? onEscapeDoubleTap;
-   final VoidCallback? onEscapeSingleTap;
+  final VoidCallback? onEscapeSingleTap;
 
   /// Optional separator builder.  If null, no separator is displayed.
   final IndexedWidgetBuilder? separatorBuilder;
 
   /// Optional padding for the inner ListView.
   final EdgeInsets? padding;
+
+  // Accepts an optional FocusNode
+  final FocusNode? focusNode;
 
   const KeyboardNavigableList({
     super.key,
@@ -46,6 +49,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     this.padding,
     this.onEscapeDoubleTap,
     this.onEscapeSingleTap,
+    this.focusNode,
   });
 
   @override
@@ -57,6 +61,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   int _focusedIndex = -1;
   late ScrollController _scrollController;
   late FocusNode _focusNode;
+  bool _isInternalFocusNode = false;
   String _quickTypeBuffer = '';
   Timer? _quickTypeTimer;
   Timer? _escapeTimer;
@@ -68,8 +73,16 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   void initState() {
     super.initState();
     _scrollController = widget.scrollController ?? ScrollController();
-    _focusNode = FocusNode();
-      if (widget.itemCount > 0) {
+
+    // Use provided FocusNode or create one internally
+    if (widget.focusNode != null) {
+      _focusNode = widget.focusNode!;
+    } else {
+      _focusNode = FocusNode();
+      _isInternalFocusNode = true;
+    }
+
+    if (widget.itemCount > 0) {
       _focusedIndex = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         widget.onSelectedIndexChange?.call(_focusedIndex);
@@ -137,18 +150,16 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   }
 
   // Double tap escape functionality
- void _handleEscape() {
-    if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null) return;
+  void _handleEscape() {
+    if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null)
+      return;
 
     if (_escapeTimer?.isActive ?? false) {
-      // Double tap detected within the time window
       _escapeTimer?.cancel();
-      widget.onEscapeDoubleTap?.call(); // Only call if it's not null
+      widget.onEscapeDoubleTap?.call();
     } else {
-      // First tap, start the timer
       _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
-        // Timer expired, single tap only, call single tap action
-        widget.onEscapeSingleTap?.call(); // Only call if not null
+        widget.onEscapeSingleTap?.call();
       });
     }
   }
@@ -351,7 +362,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        int selectedOption = 0; 
+        int selectedOption = 0;
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -419,14 +430,13 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   @override
   void dispose() {
     _quickTypeTimer?.cancel();
-     _escapeTimer?.cancel();
+    _escapeTimer?.cancel();
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
-    _focusNode.dispose();
+    if (_isInternalFocusNode) {
+      _focusNode.dispose();
+    }
     super.dispose();
   }
 }
-
-
-
