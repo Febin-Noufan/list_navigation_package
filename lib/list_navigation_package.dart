@@ -18,7 +18,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
   final Widget? loadingWidget;
   final bool isLoading;
   final String Function(int index) getItemString;
-  final VoidCallback? onEscapeDoubleTap;
+ // final VoidCallback? onEscapeDoubleTap;
   final VoidCallback? onEscapeSingleTap;
 
   /// Optional separator builder.  If null, no separator is displayed.
@@ -47,7 +47,7 @@ class KeyboardNavigableList<T> extends StatefulWidget {
     required this.getItemString, // Add this new property
     this.separatorBuilder,
     this.padding,
-    this.onEscapeDoubleTap,
+  //  this.onEscapeDoubleTap,
     this.onEscapeSingleTap,
     this.focusNode,
   });
@@ -67,7 +67,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   Timer? _escapeTimer;
 
   static const _quickTypeDuration = Duration(milliseconds: 500);
-  static const _escapeDoubleTapThreshold = Duration(milliseconds: 300);
+  //static const _escapeDoubleTapThreshold = Duration(milliseconds: 300);
 
   @override
   void initState() {
@@ -152,23 +152,15 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   // Double tap escape functionality
 void _handleEscape() {
   print("Escape pressed");
-  if (widget.onEscapeDoubleTap == null && widget.onEscapeSingleTap == null) {
-    print("No escape handlers defined");
+  
+  if (widget.onEscapeSingleTap == null) {
+    print("No single escape handler defined");
     return;
   }
 
-  if (_escapeTimer?.isActive ?? false) {
-    print("Double tap detected");
-    _escapeTimer?.cancel();
-    widget.onEscapeDoubleTap?.call();
-  } else {
-    print("First tap, waiting for second");
-    _escapeTimer = Timer(_escapeDoubleTapThreshold, () {
-      print("Single tap timeout");
-      widget.onEscapeSingleTap?.call();
-    });
-  }
+  widget.onEscapeSingleTap?.call();
 }
+
 
   void _moveSelection(int delta) {
     if (widget.itemCount == 0) return;
