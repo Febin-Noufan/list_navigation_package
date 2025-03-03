@@ -66,7 +66,7 @@ class _KeyboardNavigableListState<T> extends State<KeyboardNavigableList<T>> {
   Timer? _quickTypeTimer;
   Timer? _escapeTimer;
 
-  static const _quickTypeDuration = Duration(milliseconds: 800);
+  static const _quickTypeDuration = Duration(milliseconds: 500);
   //static const _escapeDoubleTapThreshold = Duration(milliseconds: 300);
 
   @override
